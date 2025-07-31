@@ -135,27 +135,6 @@ resource "aws_security_group" "alb" {
   name_prefix = "${var.project_name}-alb-"
   vpc_id      = aws_vpc.this.id
 
-  // ADD REDIRECT resource ????
-  /*
-
-    # Option 2: HTTP redirect to HTTPS
-    # Keep port 80 but configure ALB listener to redirect:
-            resource "aws_lb_listener" "redirect" {
-            load_balancer_arn = aws_lb.main.arn
-            port              = "80"
-            protocol          = "HTTP"
-
-            default_action {
-                type = "redirect"
-                redirect {
-                port        = "443"
-                protocol    = "HTTPS"
-                status_code = "HTTP_301"
-                }
-            }
-        }
-
-  */
   ingress {
     from_port   = 80
     to_port     = 80
