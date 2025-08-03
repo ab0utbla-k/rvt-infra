@@ -64,20 +64,24 @@ resource "aws_subnet" "private_db" {
 }
 
 resource "aws_eip" "nat" {
+  for_each = local.first_two_azs_set
+  
   domain = "vpc"
 
   tags = {
-    Name        = "${var.project_name}-nat-eip"
+    Name        = "${var.project_name}-nat-eip-${each.key}"
     Environment = var.environment
   }
 }
 
 resource "aws_nat_gateway" "this" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = values(aws_subnet.public)[0].id
+  for_each = aws_subnet.public
+  
+  allocation_id = aws_eip.nat[each.key].id
+  subnet_id     = each.value.id
 
   tags = {
-    Name        = "${var.project_name}-nat-gateway"
+    Name        = "${var.project_name}-nat-gateway-${each.key}"
     Environment = var.environment
   }
 
@@ -99,15 +103,17 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table" "private" {
+  for_each = local.first_two_azs_set
+  
   vpc_id = aws_vpc.this.id
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.this.id
+    nat_gateway_id = aws_nat_gateway.this[each.key].id
   }
 
   tags = {
-    Name        = "${var.project_name}-private-rt"
+    Name        = "${var.project_name}-private-rt-${each.key}"
     Environment = var.environment
   }
 }
@@ -123,12 +129,12 @@ resource "aws_route_table_association" "private_app" {
   for_each = aws_subnet.private_app
 
   subnet_id      = each.value.id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private[each.key].id
 }
 
 resource "aws_route_table_association" "private_db" {
   for_each = aws_subnet.private_db
 
   subnet_id      = each.value.id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private[each.key].id
 }
