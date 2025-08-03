@@ -61,15 +61,13 @@ jobs:
       - name: Terraform Plan
         id: tf-plan
         run: |
-          set +e
-
+          
           terraform plan \
             -detailed-exitcode \
             -out=${{ env.TF_PLAN_FILE }}
           
           EXITCODE=$?
-  
-          # Display status emoji based on exit code
+          
           case $EXITCODE in
             0)
               echo "✅ No changes"
