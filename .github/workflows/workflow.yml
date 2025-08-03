@@ -126,6 +126,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.TF_PLAN_FILE }}
+          path: .
 
       - name: Terraform Apply
         run: |
