@@ -63,13 +63,13 @@ jobs:
         id: tf-plan
         run: |
           set +e
-          
+
           terraform plan \
             -detailed-exitcode \
             -out=${{ env.TF_PLAN_FILE }}
-          
+
           EXITCODE=$?
-          
+
           case $EXITCODE in
             0) echo "has-changes=false" >> $GITHUB_OUTPUT;;
             2) echo "has-changes=true" >> $GITHUB_OUTPUT;;
@@ -84,51 +84,51 @@ jobs:
           path: ${{ env.TF_PLAN_FILE }}
           retention-days: 1
 
-    apply:
-      name: Terraform Apply
-      runs-on: ubuntu-latest
-      environment: dev-apply
-      needs: plan
-      if: needs.plan.outputs.has-changes == 'true'
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    environment: dev-apply
+    needs: plan
+    if: needs.plan.outputs.has-changes == 'true'
 
-      steps:
-        - name: Checkout Repository
-          uses: actions/checkout@v4
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-        - name: Setup Terraform
-          uses: hashicorp/setup-terraform@v3
-          with:
-            terraform_version: ${{ env.TF_VERSION }}
-            terraform_wrapper: false
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
 
-        - name: Configure AWS Credentials
-          uses: aws-actions/configure-aws-credentials@v4
-          with:
-            role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN_GH_RUNNER }}
-            aws-region: ${{ vars.AWS_REGION }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN_GH_RUNNER }}
+          aws-region: ${{ vars.AWS_REGION }}
 
-        - name: Get backend bucket from Parameter Store
-          id: get-backend-bucket
-          run: |
-            BACKEND_BUCKET=$(aws ssm get-parameter --name "/tf/backend/s3" --query "Parameter.Value" --output text)
-            echo "backend_bucket=$BACKEND_BUCKET" >> $GITHUB_OUTPUT
+      - name: Get backend bucket from Parameter Store
+        id: get-backend-bucket
+        run: |
+          BACKEND_BUCKET=$(aws ssm get-parameter --name "/tf/backend/s3" --query "Parameter.Value" --output text)
+          echo "backend_bucket=$BACKEND_BUCKET" >> $GITHUB_OUTPUT
 
-        - name: Terraform Init
-          run: |
-            terraform init \
-              -backend-config="region=${{ vars.AWS_REGION }}" \
-              -backend-config="bucket=${{ steps.get-backend-bucket.outputs.backend_bucket }}" \
-              -backend-config="key=terraform.tfstate" \
-              -upgrade \
-              -reconfigure
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="bucket=${{ steps.get-backend-bucket.outputs.backend_bucket }}" \
+            -backend-config="key=terraform.tfstate" \
+            -upgrade \
+            -reconfigure
 
-        - name: Download Terraform Plan
-          uses: actions/download-artifact@v4
-          with:
-            name: ${{ env.TF_PLAN_FILE }}
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.TF_PLAN_FILE }}
 
-        - name: Terraform Apply
-          run: |
-            terraform apply \
-              -auto-approve \
-              ${{ env.TF_PLAN_FILE }}
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -auto-approve \
+            ${{ env.TF_PLAN_FILE }}
