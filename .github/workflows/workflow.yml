@@ -61,6 +61,7 @@ jobs:
       - name: Terraform Plan
         id: tf-plan
         run: |
+          set +e
           
           terraform plan \
             -detailed-exitcode \
