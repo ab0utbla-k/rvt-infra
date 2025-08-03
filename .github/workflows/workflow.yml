@@ -22,9 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev-plan
     outputs:
-      has-changes:
-        description: Indicates if there are changes in the plan.
-        value: ${{ steps.tf-plan.outputs.has-changes }}
+      has-changes: ${{ steps.tf-plan.outputs.has-changes }}
 
     steps:
       - name: Checkout Repository
