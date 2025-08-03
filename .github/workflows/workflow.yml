@@ -7,11 +7,6 @@ permissions:
 
 on:
   workflow_dispatch:
-  workflow_call:
-    outputs:
-      has-changes:
-        description: Indicates if there are changes in the plan.
-        value: ${{ steps.tf-plan.outputs.has-changes }}
 
 env:
   TF_PLAN_FILE: tfplan
@@ -26,6 +21,10 @@ jobs:
     name: Terraform Plan
     runs-on: ubuntu-latest
     environment: dev-plan
+    outputs:
+      has-changes:
+        description: Indicates if there are changes in the plan.
+        value: ${{ steps.tf-plan.outputs.has-changes }}
 
     steps:
       - name: Checkout Repository
