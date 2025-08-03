@@ -7,16 +7,38 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      destroy:
+        description: Destroy all resources
+        required: false
+        default: false
+        type: boolean
+
+  workflow_call:
+    inputs:
+      destroy:
+        required: false
+        type: boolean
+        default: false
+
+env:
+  TF_PLAN_FILE: tfplan
+  TF_VERSION: 1.12.2
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./implementation
 
 jobs:
   plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
     environment: dev-plan
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./implementation
+
+    outputs:
+      has-changes: ${{ steps.tf-plan.outputs.has-changes }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -24,7 +46,8 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.12.2
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -37,4 +60,90 @@ jobs:
         run: |
           BACKEND_BUCKET=$(aws ssm get-parameter --name "/tf/backend/s3" --query "Parameter.Value" --output text)
           echo "backend_bucket=$BACKEND_BUCKET" >> $GITHUB_OUTPUT
-          
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="bucket=${{ steps.get-backend-bucket.outputs.backend_bucket }}" \
+            -backend-config="key=terraform.tfstate" \
+            -upgrade \
+            -reconfigure
+
+      - name: Validate Terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: tf-plan
+        run: |
+          set +e
+
+          terraform plan \
+            -detailed-exitcode \
+            -out=${{ env.TF_PLAN_FILE }} \
+            ${{ inputs.destroy == true && '-destroy' || '' }}
+
+          EXITCODE=$?
+
+          case $EXITCODE in
+            0) echo "has-changes=false" >> $GITHUB_OUTPUT;;
+            2) echo "has-changes=true" >> $GITHUB_OUTPUT;;
+            *) exit 1;;
+          esac
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        if: ${{ steps.tf-plan.outputs.has-changes == 'true' }}
+        with:
+          name: ${{ env.TF_PLAN_FILE }}
+          path: "**/${{ env.TF_PLAN_FILE }}"
+          retention-days: 1
+
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    environment: dev-apply
+    needs: plan
+    if: needs.plan.outputs.has-changes == 'true'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN_GH_RUNNER }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Get backend bucket from Parameter Store
+        id: get-backend-bucket
+        run: |
+          BACKEND_BUCKET=$(aws ssm get-parameter --name "/tf/backend/s3" --query "Parameter.Value" --output text)
+          echo "backend_bucket=$BACKEND_BUCKET" >> $GITHUB_OUTPUT
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="bucket=${{ steps.get-backend-bucket.outputs.backend_bucket }}" \
+            -backend-config="key=terraform.tfstate" \
+            -upgrade \
+            -reconfigure
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.TF_PLAN_FILE }}
+
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -auto-approve \
+            ${{ env.TF_PLAN_FILE }}
