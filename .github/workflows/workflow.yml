@@ -27,12 +27,12 @@ jobs:
         run: |
           echo "has-changes=true" >> "$GITHUB_OUTPUT"
 
-    print:
-      needs: plan
-      runs-on: ubuntu-latest
-      if: needs.planb.outputs.has-changes == 'true'
-      steps:
-        - run: echo "There are changes"
+  print:
+    needs: plan
+    runs-on: ubuntu-latest
+    if: needs.planb.outputs.has-changes == 'true'
+    steps:
+      - run: echo "There are changes"
   plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
