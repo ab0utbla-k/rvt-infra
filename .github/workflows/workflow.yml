@@ -67,6 +67,8 @@ jobs:
             -out=${{ env.TF_PLAN_FILE }}
           
           EXITCODE=$?
+          
+          echo "exitcode=$EXITCODE" >> $GITHUB_OUTPUT
   
           # Display status emoji based on exit code
           case $EXITCODE in
