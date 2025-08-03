@@ -49,15 +49,6 @@ ephemeral "aws_secretsmanager_secret_version" "db_password" {
   secret_id = aws_secretsmanager_secret_version.db_password.secret_id
 }
 
-resource "aws_db_instance" "example" {
-  instance_class      = "db.t3.micro"
-  allocated_storage   = "5"
-  engine              = "postgres"
-  username            = "example"
-  skip_final_snapshot = true
-
-}
-
 resource "aws_db_instance" "this" {
   identifier = "${var.project_name}-db"
 
