@@ -103,7 +103,7 @@ variable "db_multi_az" {
 variable "db_deletion_protection" {
   type        = bool
   description = "Enable deletion protection"
-  default     = true
+  default     = false
 }
 
 variable "db_final_snapshot" {

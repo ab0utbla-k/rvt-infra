@@ -79,7 +79,7 @@ jobs:
           terraform plan \
             -detailed-exitcode \
             -out=${{ env.TF_PLAN_FILE }} \
-            ${{ inputs.destroy == 'true' && '-destroy' || '' }}
+            ${{ inputs.destroy == true && '-destroy' || '' }}
 
           EXITCODE=$?
 
