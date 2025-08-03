@@ -28,7 +28,7 @@ jobs:
           echo "has-changes=true" >> "$GITHUB_OUTPUT"
 
   print:
-    needs: plan
+    needs: planb
     runs-on: ubuntu-latest
     if: needs.planb.outputs.has-changes == 'true'
     steps:
