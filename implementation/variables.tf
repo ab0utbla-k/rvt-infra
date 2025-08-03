@@ -13,7 +13,7 @@ variable "environment" {
 variable "aws_region" {
   type        = string
   description = "AWS region"
-  default     = "us-east-1"
+  default     = "eu-north-1"
 }
 
 variable "vpc_cidr" {
