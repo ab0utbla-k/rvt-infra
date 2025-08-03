@@ -18,11 +18,12 @@ resource "aws_internet_gateway" "this" {
   }
 }
 
+// "10.0.0.0/24", "10.0.1.0/24"
 resource "aws_subnet" "public" {
-  for_each = toset(slice(data.aws_availability_zones.this.names, 0, 2))
+  for_each = local.first_two_azs_set
 
   vpc_id                  = aws_vpc.this.id
-  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
+  cidr_block              = cidrsubnet(var.vpc_cidr, 8, index(local.first_two_azs_list, each.key))
   availability_zone       = each.key
   map_public_ip_on_launch = true
 
@@ -33,11 +34,12 @@ resource "aws_subnet" "public" {
   }
 }
 
+// "10.0.10.0/24" etc
 resource "aws_subnet" "private_app" {
-  for_each = toset(slice(data.aws_availability_zones.this.names, 0, 2))
+  for_each = local.first_two_azs_set
 
   vpc_id            = aws_vpc.this.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 10)
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, index(local.first_two_azs_list, each.key) + 10)
   availability_zone = each.key
 
   tags = {
@@ -48,10 +50,10 @@ resource "aws_subnet" "private_app" {
 }
 
 resource "aws_subnet" "private_db" {
-  for_each = toset(slice(data.aws_availability_zones.this.names, 0, 2))
+  for_each = local.first_two_azs_set
 
   vpc_id            = aws_vpc.this.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 20)
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, index(local.first_two_azs_list, each.key) + 20)
   availability_zone = each.key
 
   tags = {
@@ -72,7 +74,7 @@ resource "aws_eip" "nat" {
 
 resource "aws_nat_gateway" "this" {
   allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
+  subnet_id     = values(aws_subnet.public)[0].id
 
   tags = {
     Name        = "${var.project_name}-nat-gateway"
@@ -97,7 +99,7 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = aws_vpc.this.id
 
   route {
     cidr_block     = "0.0.0.0/0"
@@ -129,61 +131,4 @@ resource "aws_route_table_association" "private_db" {
 
   subnet_id      = each.value.id
   route_table_id = aws_route_table.private.id
-}
-
-resource "aws_security_group" "alb" {
-  name_prefix = "${var.project_name}-alb-"
-  vpc_id      = aws_vpc.this.id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name        = "${var.project_name}-alb-sg"
-    Environment = var.environment
-  }
-
-  // CREATE BEFORE DESTROY???
-}
-
-resource "aws_security_group" "ecs" {
-  name_prefix = "${var.project_name}-ecs-"
-  vpc_id      = aws_vpc.this.id
-
-  ingress {
-    from_port       = var.app_port
-    to_port         = var.app_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name        = "${var.project_name}-ecs-sg"
-    Environment = var.environment
-  }
 }
