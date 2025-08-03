@@ -4,9 +4,21 @@ name: Terraform Workflow
 permissions:
   id-token: write
   contents: read
-
 on:
   workflow_dispatch:
+    inputs:
+      destroy:
+        description: Destroy all resources
+        required: false
+        default: false
+        type: boolean
+
+  workflow_call:
+    inputs:
+      destroy:
+        required: false
+        type: boolean
+        default: false
 
 env:
   TF_PLAN_FILE: tfplan
@@ -66,7 +78,8 @@ jobs:
 
           terraform plan \
             -detailed-exitcode \
-            -out=${{ env.TF_PLAN_FILE }}
+            -out=${{ env.TF_PLAN_FILE }} \
+            ${{ inputs.destroy == 'true' && '-destroy' || '' }}
 
           EXITCODE=$?
 
