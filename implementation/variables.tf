@@ -73,7 +73,7 @@ variable "db_name" {
 variable "db_username" {
   type        = string
   description = "Database master username"
-  default     = "admin"
+  default     = "helloadm"
 }
 
 variable "db_backup_retention_period" {
