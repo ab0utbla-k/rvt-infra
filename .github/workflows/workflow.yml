@@ -1,0 +1,40 @@
+---
+name: Terraform Workflow
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_dispatch:
+
+jobs:
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    environment: dev-plan
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./implementation
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN_GH_RUNNER }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Get backend bucket from Parameter Store
+        id: get-backend-bucket
+        run: |
+          BACKEND_BUCKET=$(aws ssm get-parameter --name "/tf/backend/s3" --query "Parameter.Value" --output text)
+          echo "backend_bucket=$BACKEND_BUCKET" >> $GITHUB_OUTPUT
+          
