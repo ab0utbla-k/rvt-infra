@@ -31,7 +31,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.11.4
+          terraform_version: 1.10.5
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -44,7 +44,7 @@ jobs:
         run: |
           BACKEND_BUCKET=$(aws ssm get-parameter --name "/tf/backend/s3" --query "Parameter.Value" --output text)
           echo "backend_bucket=$BACKEND_BUCKET" >> $GITHUB_OUTPUT
-          
+
       - name: Terraform Init
         run: |
           terraform init \
@@ -67,7 +67,6 @@ jobs:
             -out=${{ env.TF_PLAN_FILE }}
           
           EXITCODE=$?
-          echo "Terraform exit code: $EXITCODE"
   
           # Display status emoji based on exit code
           case $EXITCODE in
