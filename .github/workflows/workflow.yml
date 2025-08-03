@@ -4,6 +4,7 @@ name: Terraform Workflow
 permissions:
   id-token: write
   contents: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -34,6 +35,7 @@ jobs:
     name: Terraform Plan
     runs-on: ubuntu-latest
     environment: dev-plan
+
     outputs:
       has-changes: ${{ steps.tf-plan.outputs.has-changes }}
 
