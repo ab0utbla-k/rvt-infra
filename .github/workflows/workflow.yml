@@ -70,18 +70,9 @@ jobs:
           EXITCODE=$?
           
           case $EXITCODE in
-            0)
-              echo "✅ No changes"
-              echo "has-changes=false" >> $GITHUB_OUTPUT
-              ;;
-            2)
-              echo "🔄 Changes detected"
-              echo "has-changes=true" >> $GITHUB_OUTPUT
-              ;;
-            *)
-              echo "❌ Plan failed"
-              exit 1
-              ;;
+            0) echo "has-changes=false" >> $GITHUB_OUTPUT;;
+            2) echo "has-changes=true" >> $GITHUB_OUTPUT;;
+            *) exit 1;;
           esac
 
       - name: Upload Terraform Plan
