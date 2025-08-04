@@ -11,8 +11,7 @@ resource "aws_security_group" "rds" {
   }
 
   tags = {
-    Name        = "${var.project_name}-rds-sg"
-    Environment = var.environment
+    Name = "${var.project_name}-rds-sg"
   }
 
   lifecycle {
@@ -25,18 +24,17 @@ resource "aws_db_subnet_group" "this" {
   subnet_ids = [for s in aws_subnet.private_db : s.id]
 
   tags = {
-    Name        = "${var.project_name}-db-subnet-group"
-    Environment = var.environment
+    Name = "${var.project_name}-db-subnet-group"
   }
 }
 
 ephemeral "random_password" "db_password" {
   length           = 16
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!$%*_-."
 }
 
 resource "aws_secretsmanager_secret" "db_password" {
-  name = "db_password"
+  name = "rds/postgres/password"
 }
 
 resource "aws_secretsmanager_secret_version" "db_password" {
@@ -47,6 +45,24 @@ resource "aws_secretsmanager_secret_version" "db_password" {
 
 ephemeral "aws_secretsmanager_secret_version" "db_password" {
   secret_id = aws_secretsmanager_secret_version.db_password.secret_id
+}
+
+resource "aws_secretsmanager_secret" "db_dsn" {
+  name = "rds/postgres/dsn"
+}
+
+resource "aws_secretsmanager_secret_version" "db_dsn" {
+  secret_id = aws_secretsmanager_secret.db_dsn.id
+
+  secret_string_wo = format(
+    "postgres://%s:%s@%s:%d/%s?sslmode=require",
+    aws_db_instance.this.username,
+    ephemeral.random_password.db_password.result,
+    aws_db_instance.this.address,
+    aws_db_instance.this.port,
+    var.db_name
+  )
+  secret_string_wo_version = 1
 }
 
 resource "aws_db_instance" "this" {
@@ -84,8 +100,7 @@ resource "aws_db_instance" "this" {
   monitoring_role_arn          = aws_iam_role.rds_monitoring.arn
 
   tags = {
-    Name        = "${var.project_name}-db"
-    Environment = var.environment
+    Name = "${var.project_name}-db"
   }
 }
 
@@ -108,4 +123,3 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring" {
   role       = aws_iam_role.rds_monitoring.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
-

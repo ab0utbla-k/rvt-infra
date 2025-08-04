@@ -17,11 +17,137 @@ resource "aws_security_group" "ecs" {
   }
 
   tags = {
-    Name        = "${var.project_name}-ecs-sg"
-    Environment = var.environment
+    Name = "${var.project_name}-ecs-sg"
   }
 
   lifecycle {
     create_before_destroy = true
   }
+}
+
+resource "aws_ecs_cluster" "this" {
+  name = "${var.project_name}-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
+}
+
+resource "aws_ecs_task_definition" "this" {
+  family                   = "${var.project_name}-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = var.ecs_cpu
+  memory                   = var.ecs_memory
+  execution_role_arn       = aws_iam_role.task_execution.arn
+
+  container_definitions = jsonencode([
+    {
+      name  = var.project_name
+      image = "nginx:latest" // Just a dummy thing to bootstrap
+
+      portMappings = [
+        {
+          containerPort = var.app_port
+          protocol      = "tcp"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.this.name
+          awslogs-region        = var.aws_region
+          awslogs-stream-prefix = "ecs"
+        }
+      }
+    }
+  ])
+
+  tags = {
+    Name = "${var.project_name}-task"
+  }
+}
+
+// AUTOSCALING??
+resource "aws_ecs_service" "this" {
+  name            = "${var.project_name}-service"
+  cluster         = aws_ecs_cluster.this.id
+  task_definition = aws_ecs_task_definition.this.arn
+  desired_count   = var.ecs_desired_count
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    security_groups  = [aws_security_group.ecs.id]
+    subnets          = [for s in aws_subnet.private_app : s.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.this.arn
+    container_name   = var.project_name
+    container_port   = var.app_port
+  }
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
+  lifecycle {
+    ignore_changes = [desired_count, task_definition]
+  }
+
+  depends_on = [aws_lb_listener.this]
+}
+
+resource "aws_iam_role" "task_execution" {
+  name = "${var.project_name}-task-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "task_execution" {
+  role       = aws_iam_role.task_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+resource "aws_iam_policy" "task_execution_dsn_access" {
+  name        = "AllowTaskExecGetSecretValue"
+  description = "Allow ECS task execution role to get secret value from Secrets Manager"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = aws_secretsmanager_secret.db_dsn.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "task_execution_dsn_access" {
+  role       = aws_iam_role.task_execution.name
+  policy_arn = aws_iam_policy.task_execution_dsn_access.arn
+}
+
+resource "aws_ssm_parameter" "ecs_task_definition" {
+  name  = "/app/ecs/task-definition"
+  type  = "String"
+  value = aws_ecs_task_definition.this.family
 }

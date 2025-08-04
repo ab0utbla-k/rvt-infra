@@ -6,11 +6,6 @@ resource "aws_lb" "this" {
   subnets            = [for s in aws_subnet.public : s.id]
 
   enable_deletion_protection = var.alb_deletion_protection
-
-  tags = {
-    Name        = "${var.project_name}-alb"
-    Environment = var.environment
-  }
 }
 
 resource "aws_lb_target_group" "this" {
@@ -26,15 +21,10 @@ resource "aws_lb_target_group" "this" {
     unhealthy_threshold = 2
     timeout             = 5
     interval            = 30
-    path                = "/health"
+    path                = "/healthcheck"
     matcher             = "200"
     port                = "traffic-port"
     protocol            = "HTTP"
-  }
-
-  tags = {
-    Name        = "${var.project_name}-tg"
-    Environment = var.environment
   }
 }
 
@@ -76,8 +66,7 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
-    Name        = "${var.project_name}-alb-sg"
-    Environment = var.environment
+    Name = "${var.project_name}-alb-sg"
   }
 
   lifecycle {
