@@ -17,7 +17,7 @@ resource "aws_security_group" "ecs" {
   }
 
   tags = {
-    Name        = "${var.project_name}-ecs-sg"
+    Name = "${var.project_name}-ecs-sg"
   }
 
   lifecycle {
@@ -45,72 +45,32 @@ resource "aws_ecs_task_definition" "this" {
   container_definitions = jsonencode([
     {
       name  = var.project_name
-      image = "nginx:latest"
+      image = "nginx:latest" // Just a dummy thing to bootstrap
 
-      // keep for app
-      # portMappings = [
-      #   {
-      #     containerPort = var.app_port
-      #     protocol      = "tcp"
-      #   }
-      # ]
-
-      environment = [
+      portMappings = [
         {
-          name = "DB_USER"
-          value = var.db_username
-        },
-        {
-          name  = "PORT"
-          value = tostring(var.app_port)
-        },
-        {
-          name  = "DB_HOST"
-          value = aws_db_instance.main.endpoint
-        },
-        {
-          name  = "DB_PORT"
-          value = "5432"
-        },
-        {
-          name  = "DB_NAME"
-          value = var.db_name
+          containerPort = var.app_port
+          protocol      = "tcp"
         }
       ]
 
-      secrets = [
-        {
-          name      = "DB_PASSWORD"
-          valueFrom = //TEST THIS WITH ARN
-        }
-      ]
-
-      // SET THIS
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.app.name
+          awslogs-group         = aws_cloudwatch_log_group.this.name
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = "ecs"
         }
-      }
-
-      // AND THIS
-      healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:${var.app_port}/health || exit 1"]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
       }
     }
   ])
 
   tags = {
-    Name        = "${var.project_name}-task"
+    Name = "${var.project_name}-task"
   }
 }
 
+// AUTOSCALING??
 resource "aws_ecs_service" "this" {
   name            = "${var.project_name}-service"
   cluster         = aws_ecs_cluster.this.id
@@ -135,19 +95,15 @@ resource "aws_ecs_service" "this" {
     rollback = true
   }
 
-  tags = {
-    Name        = "${var.project_name}-service"
-  }
-
   lifecycle {
-    ignore_changes = [desired_count]
+    ignore_changes = [desired_count, task_definition]
   }
 
   depends_on = [aws_lb_listener.this]
 }
 
 resource "aws_iam_role" "task_execution" {
-  name = "my-app-task-execution-role"
+  name = "${var.project_name}-task-execution-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -166,4 +122,32 @@ resource "aws_iam_role" "task_execution" {
 resource "aws_iam_role_policy_attachment" "task_execution" {
   role       = aws_iam_role.task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+resource "aws_iam_policy" "task_execution_dsn_access" {
+  name        = "AllowTaskExecGetSecretValue"
+  description = "Allow ECS task execution role to get secret value from Secrets Manager"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = aws_secretsmanager_secret.db_dsn.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "task_execution_dsn_access" {
+  role       = aws_iam_role.task_execution.name
+  policy_arn = aws_iam_policy.task_execution_dsn_access.arn
+}
+
+resource "aws_ssm_parameter" "ecs_task_definition" {
+  name  = "/app/ecs/task-definition"
+  type  = "String"
+  value = aws_ecs_task_definition.this.family
 }
