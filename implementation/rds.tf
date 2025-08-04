@@ -11,8 +11,7 @@ resource "aws_security_group" "rds" {
   }
 
   tags = {
-    Name        = "${var.project_name}-rds-sg"
-    Environment = var.environment
+    Name = "${var.project_name}-rds-sg"
   }
 
   lifecycle {
@@ -25,8 +24,7 @@ resource "aws_db_subnet_group" "this" {
   subnet_ids = [for s in aws_subnet.private_db : s.id]
 
   tags = {
-    Name        = "${var.project_name}-db-subnet-group"
-    Environment = var.environment
+    Name = "${var.project_name}-db-subnet-group"
   }
 }
 
@@ -84,8 +82,7 @@ resource "aws_db_instance" "this" {
   monitoring_role_arn          = aws_iam_role.rds_monitoring.arn
 
   tags = {
-    Name        = "${var.project_name}-db"
-    Environment = var.environment
+    Name = "${var.project_name}-db"
   }
 }
 

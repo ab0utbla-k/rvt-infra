@@ -4,8 +4,7 @@ resource "aws_vpc" "this" {
   enable_dns_support   = true
 
   tags = {
-    Name        = "${var.project_name}-vpc"
-    Environment = var.environment
+    Name = "${var.project_name}-vpc"
   }
 }
 
@@ -13,8 +12,7 @@ resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
 
   tags = {
-    Name        = "${var.project_name}-igw"
-    Environment = var.environment
+    Name = "${var.project_name}-igw"
   }
 }
 
@@ -28,9 +26,8 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name        = "${var.project_name}-public-subnet-${each.key}"
-    Environment = var.environment
-    Type        = "public"
+    Name = "${var.project_name}-public-subnet-${each.key}"
+    Type = "public"
   }
 }
 
@@ -43,9 +40,8 @@ resource "aws_subnet" "private_app" {
   availability_zone = each.key
 
   tags = {
-    Name        = "${var.project_name}-private-app-subnet-${each.key}"
-    Environment = var.environment
-    Type        = "private-app"
+    Name = "${var.project_name}-private-app-subnet-${each.key}"
+    Type = "private-app"
   }
 }
 
@@ -57,32 +53,29 @@ resource "aws_subnet" "private_db" {
   availability_zone = each.key
 
   tags = {
-    Name        = "${var.project_name}-private-db-subnet-${each.key}"
-    Environment = var.environment
-    Type        = "private-db"
+    Name = "${var.project_name}-private-db-subnet-${each.key}"
+    Type = "private-db"
   }
 }
 
 resource "aws_eip" "nat" {
   for_each = local.first_two_azs_set
-  
+
   domain = "vpc"
 
   tags = {
-    Name        = "${var.project_name}-nat-eip-${each.key}"
-    Environment = var.environment
+    Name = "${var.project_name}-nat-eip-${each.key}"
   }
 }
 
 resource "aws_nat_gateway" "this" {
   for_each = aws_subnet.public
-  
+
   allocation_id = aws_eip.nat[each.key].id
   subnet_id     = each.value.id
 
   tags = {
-    Name        = "${var.project_name}-nat-gateway-${each.key}"
-    Environment = var.environment
+    Name = "${var.project_name}-nat-gateway-${each.key}"
   }
 
   depends_on = [aws_internet_gateway.this]
@@ -97,14 +90,13 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name        = "${var.project_name}-public-rt"
-    Environment = var.environment
+    Name = "${var.project_name}-public-rt"
   }
 }
 
 resource "aws_route_table" "private" {
   for_each = local.first_two_azs_set
-  
+
   vpc_id = aws_vpc.this.id
 
   route {
@@ -113,8 +105,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
-    Name        = "${var.project_name}-private-rt-${each.key}"
-    Environment = var.environment
+    Name = "${var.project_name}-private-rt-${each.key}"
   }
 }
 
