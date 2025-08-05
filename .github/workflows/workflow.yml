@@ -74,7 +74,7 @@ jobs:
           terraform plan \
             -detailed-exitcode \
             -out=${{ env.TF_PLAN_FILE }} \
-            -var-file="../configuration/terraform.tfvars" \
+            -var-file="../configuration/dev/terraform.tfvars" \
             ${{ inputs.destroy == true && '-destroy' || '' }}
 
           EXITCODE=$?
