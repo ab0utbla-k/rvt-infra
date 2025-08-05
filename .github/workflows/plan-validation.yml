@@ -1,5 +1,5 @@
 ---
-name: Terraform Plan Validation - Dev
+name: Terraform Plan Validation
 
 permissions:
   id-token: write
