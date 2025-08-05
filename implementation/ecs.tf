@@ -70,7 +70,6 @@ resource "aws_ecs_task_definition" "this" {
   }
 }
 
-// AUTOSCALING??
 resource "aws_ecs_service" "this" {
   name            = "${var.project_name}-service"
   cluster         = aws_ecs_cluster.this.id
@@ -100,6 +99,48 @@ resource "aws_ecs_service" "this" {
   }
 
   depends_on = [aws_lb_listener.this]
+}
+
+resource "aws_appautoscaling_target" "this" {
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_cluster.this.name}/${aws_ecs_service.this.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  min_capacity       = 1
+  max_capacity       = 5
+}
+
+resource "aws_appautoscaling_policy" "ecs_cpu_policy" {
+  name               = "${var.project_name}-ecs-cpu-policy"
+  service_namespace  = "ecs"
+  resource_id        = aws_appautoscaling_target.this.resource_id
+  scalable_dimension = "ecs:service:DesiredCount"
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = 60.0
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+  }
+}
+
+resource "aws_appautoscaling_policy" "ecs_memory_policy" {
+  name               = "${${var.project_name}}-ecs-memory-policy"
+  service_namespace  = "ecs"
+  resource_id        = aws_appautoscaling_target.this.resource_id
+  scalable_dimension = "ecs:service:DesiredCount"
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+    target_value       = 70.0
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+  }
 }
 
 resource "aws_iam_role" "task_execution" {
