@@ -192,3 +192,12 @@ variable "secret_recovery_window_in_days" {
     The default value is 30.
   EOT
 }
+
+variable "ecr_enable_force_delete" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+    (Optional) If true, will delete the repository even if it contains images.
+    Defaults to false.
+  EOT
+}

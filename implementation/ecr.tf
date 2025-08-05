@@ -9,6 +9,8 @@ resource "aws_ecr_repository" "this" {
   encryption_configuration {
     encryption_type = "AES256"
   }
+
+  force_delete = var.ecr_enable_force_delete
 }
 
 resource "aws_ecr_lifecycle_policy" "this" {
