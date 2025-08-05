@@ -8,7 +8,7 @@ resource "aws_lb" "this" {
   )
   subnets = [for s in aws_subnet.public : s.id]
 
-  enable_deletion_protection = var.alb_deletion_protection
+  enable_deletion_protection = var.alb_enable_deletion_protection
 }
 
 resource "aws_lb_target_group" "this" {
