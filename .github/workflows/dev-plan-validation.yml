@@ -109,19 +109,19 @@ jobs:
               echo "|------|--------|"
 
               awk '
-              /# .* will be created/ { 
+              /# .* will be created/ {
                 gsub(/# /, "", $0); gsub(/ will be created/, "", $0)
                 print "|:white_check_mark: create|" $0 "|"
               }
-              /# .* will be destroyed/ { 
+              /# .* will be destroyed/ {
                 gsub(/# /, "", $0); gsub(/ will be destroyed/, "", $0)
                 print "|:bangbang: destroy|" $0 "|"
               }
-              /# .* will be updated in-place/ { 
+              /# .* will be updated in-place/ {
                 gsub(/# /, "", $0); gsub(/ will be updated in-place/, "", $0)
                 print "|:arrows_counterclockwise: update|" $0 "|"
               }
-              /# .* must be replaced/ { 
+              /# .* must be replaced/ {
                 gsub(/# /, "", $0); gsub(/ must be replaced/, "", $0)
                 print "|:recycle: replace|" $0 "|"
               }
