@@ -93,6 +93,49 @@ jobs:
             *) exit 1;;
           esac
 
+      - name: Terraform Plan Summary
+        run: |
+          terraform show -no-color ${{ env.TF_PLAN_FILE }} > plan.txt
+
+          if grep -q "No changes. Your infrastructure matches the configuration." plan.txt; then
+            {
+              echo "## No changes needed"
+              echo "Terraform has compared your real infrastructure against your configuration and found no differences, so no changes are needed."
+            } > plan.md
+          else
+            {
+              echo "## Terraform will perform the following actions:"
+              echo ""
+              echo "|Action|Resource|"
+              echo "|------|--------|"
+
+              awk '
+              /# .* will be created/ {
+                gsub(/# /, "", $0); gsub(/ will be created/, "", $0)
+                print "|:white_check_mark: create|" $0 "|"
+              }
+              /# .* will be destroyed/ {
+                gsub(/# /, "", $0); gsub(/ will be destroyed/, "", $0)
+                print "|:bangbang: destroy|" $0 "|"
+              }
+              /# .* will be updated in-place/ {
+                gsub(/# /, "", $0); gsub(/ will be updated in-place/, "", $0)
+                print "|:arrows_counterclockwise: update|" $0 "|"
+              }
+              /# .* must be replaced/ {
+                gsub(/# /, "", $0); gsub(/ must be replaced/, "", $0)
+                print "|:recycle: replace|" $0 "|"
+              }
+              /Plan: [0-9]+ to add, [0-9]+ to change, [0-9]+ to destroy/ {
+                print ""
+                print "## " $0
+              }
+              ' plan.txt
+            } > plan.md
+          fi
+
+          cat plan.md >> $GITHUB_STEP_SUMMARY
+
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         if: ${{ steps.tf-plan.outputs.has-changes == 'true' }}
