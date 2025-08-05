@@ -4,7 +4,7 @@ Production-ready AWS infrastructure for scalable web applications with automated
 
 ## Deployment
 
-### Automated Deployment (Recommended)
+### Automated Deployment
 
 Infrastructure is automatically deployed via GitHub Actions:
 
@@ -14,17 +14,9 @@ Infrastructure is automatically deployed via GitHub Actions:
 
 ### Pipeline Features
 
-- **Automated Terraform plan validation** on every PR
-- **Zero-downtime deployments** with approval gates
-- **State management** via S3 backend  
-- **AWS IAM roles** with OIDC (no long-lived credentials)
-- **Multi-environment support** (dev/prod configurations)
-
-### Prerequisites
-
-- AWS Account with appropriate IAM roles configured
-- GitHub repository with required secrets and variables
-- S3 bucket for Terraform state (retrieved from Parameter Store)
+- Deployment with approval gates 
+- AWS IAM roles with OIDC (no long-lived credentials)
+- Multi-environment support (dev/prod configurations)
 
 ## Infrastructure Components
 
@@ -32,7 +24,7 @@ This deploys a complete production-ready stack:
 
 - **CloudFront CDN** with HTTPS termination
 - **Application Load Balancer** with health checks
-- **ECS Fargate** cluster with auto-scaling (1-5 tasks)
+- **ECS Fargate** cluster with auto-scaling
 - **PostgreSQL RDS** with Multi-AZ and automated backups
 - **VPC** with 3-tier network architecture across 2 AZs
 - **ECR** repository for container images
