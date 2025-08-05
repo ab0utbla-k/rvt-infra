@@ -35,6 +35,7 @@ ephemeral "random_password" "db_password" {
 
 resource "aws_secretsmanager_secret" "db_password" {
   name = "rds/postgres/password"
+  recovery_window_in_days = var.secret_recovery_window_in_days
 }
 
 resource "aws_secretsmanager_secret_version" "db_password" {
@@ -49,6 +50,7 @@ ephemeral "aws_secretsmanager_secret_version" "db_password" {
 
 resource "aws_secretsmanager_secret" "db_dsn" {
   name = "rds/postgres/dsn"
+  recovery_window_in_days = var.secret_recovery_window_in_days
 }
 
 resource "aws_secretsmanager_secret_version" "db_dsn" {
@@ -87,13 +89,13 @@ resource "aws_db_instance" "this" {
   backup_retention_period = var.db_backup_retention_period
   backup_window           = var.db_backup_window
   maintenance_window      = var.db_maintenance_window
-  skip_final_snapshot     = true
+  skip_final_snapshot     = var.db_skip_final_snapshot
 
   multi_az            = var.db_multi_az
   publicly_accessible = false
-  storage_type        = var.storage_type
+  storage_type        = var.db_storage_type
 
-  deletion_protection = var.db_deletion_protection
+  deletion_protection = var.db_enable_deletion_protection
 
   performance_insights_enabled = true
   monitoring_interval          = 60
