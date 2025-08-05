@@ -127,7 +127,7 @@ resource "aws_appautoscaling_policy" "ecs_cpu_policy" {
 }
 
 resource "aws_appautoscaling_policy" "ecs_memory_policy" {
-  name               = "${${var.project_name}}-ecs-memory-policy"
+  name               = "${var.project_name}-ecs-memory-policy"
   service_namespace  = "ecs"
   resource_id        = aws_appautoscaling_target.this.resource_id
   scalable_dimension = "ecs:service:DesiredCount"
