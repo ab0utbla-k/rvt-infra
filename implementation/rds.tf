@@ -59,7 +59,7 @@ resource "aws_secretsmanager_secret_version" "db_dsn" {
   secret_string_wo = format(
     "postgres://%s:%s@%s:%d/%s?sslmode=require",
     aws_db_instance.this.username,
-    ephemeral.random_password.db_password.result,
+    urlencode(ephemeral.random_password.db_password.result),
     aws_db_instance.this.address,
     aws_db_instance.this.port,
     var.db_name
