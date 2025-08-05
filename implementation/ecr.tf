@@ -45,3 +45,9 @@ resource "aws_ecr_lifecycle_policy" "this" {
     ]
   })
 }
+
+resource "aws_ssm_parameter" "ecr_repository" {
+  name  = "/app/ecr/repository-name"
+  type  = "String"
+  value = aws_ecr_repository.this.name
+}
