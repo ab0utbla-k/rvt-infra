@@ -1,0 +1,94 @@
+---
+name: Check Plan - Dev
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  push:
+    paths:
+      - 'implementation/**'
+      - 'configuration/**'
+
+env:
+  TF_PLAN_FILE: tfplan
+  TF_VERSION: 1.12.2
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./implementation
+
+jobs:
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    environment: dev-plan
+
+    outputs:
+      has-changes: ${{ steps.tf-plan.outputs.has-changes }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN_GH_RUNNER }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Get backend bucket from Parameter Store
+        id: get-backend-bucket
+        run: |
+          BACKEND_BUCKET=$(aws ssm get-parameter --name "/tf/backend/s3" --query "Parameter.Value" --output text)
+          echo "backend_bucket=$BACKEND_BUCKET" >> $GITHUB_OUTPUT
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="bucket=${{ steps.get-backend-bucket.outputs.backend_bucket }}" \
+            -backend-config="key=terraform.tfstate" \
+            -upgrade \
+            -reconfigure \
+            -var-file="../configuration/terraform.tfvars"
+
+      - name: Validate Terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: tf-plan
+        run: |
+          set +e
+
+          terraform plan \
+            -detailed-exitcode \
+            -out=${{ env.TF_PLAN_FILE }} \
+            ${{ inputs.destroy == true && '-destroy' || '' }}
+
+          EXITCODE=$?
+
+          case $EXITCODE in
+            0) echo "has-changes=false" >> $GITHUB_OUTPUT;;
+            2) echo "has-changes=true" >> $GITHUB_OUTPUT;;
+            *) exit 1;;
+          esac
+
+      - name: "📋 TERRAFORM PLAN COMPLETE - CHECK RESULTS ABOVE 📋"
+        run: |
+          if [[ "${{ steps.tf-plan.outputs.has-changes }}" == "true" ]]; then
+            echo "### 📝 Terraform Plan Results" >> $GITHUB_STEP_SUMMARY
+            echo "**Status:** Changes detected - plan file uploaded" >> $GITHUB_STEP_SUMMARY
+            echo "**Plan File:** \`${{ env.TF_PLAN_FILE }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ No Infrastructure Changes" >> $GITHUB_STEP_SUMMARY
+            echo "**Status:** No changes detected" >> $GITHUB_STEP_SUMMARY
+          fi
