@@ -38,8 +38,8 @@ resource "aws_ecs_task_definition" "this" {
   family                   = "${var.project_name}-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = var.ecs_cpu
-  memory                   = var.ecs_memory
+  cpu                      = var.ecs_task_cpu
+  memory                   = var.ecs_task_memory
   execution_role_arn       = aws_iam_role.task_execution.arn
 
   container_definitions = jsonencode([
