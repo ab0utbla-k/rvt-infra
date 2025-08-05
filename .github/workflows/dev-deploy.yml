@@ -1,5 +1,5 @@
 ---
-name: Terraform Workflow - Dev
+name: Terraform Plan & Apply - Dev
 
 permissions:
   id-token: write
