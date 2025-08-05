@@ -61,7 +61,8 @@ jobs:
             -backend-config="bucket=${{ steps.get-backend-bucket.outputs.backend_bucket }}" \
             -backend-config="key=terraform.tfstate" \
             -upgrade \
-            -reconfigure
+            -reconfigure \
+            -var-file="../configuration/terraform.tfvars"
 
       - name: Validate Terraform
         run: terraform validate
