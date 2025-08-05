@@ -7,7 +7,12 @@ permissions:
 
 on:
   workflow_dispatch:
-
+    inputs:
+      destroy:
+        description: Validate with destroy flag
+        required: false
+        default: false
+        type: boolean
   push:
     branches-ignore:
       - main
