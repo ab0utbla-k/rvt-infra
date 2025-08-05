@@ -6,7 +6,7 @@ resource "aws_security_group" "ecs" {
     from_port       = var.app_port
     to_port         = var.app_port
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
+    security_groups = [for sg in aws_security_group.alb_ingress : sg.id]
   }
 
   egress {
