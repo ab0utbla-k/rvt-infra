@@ -58,8 +58,7 @@ jobs:
             -backend-config="bucket=${{ steps.get-backend-bucket.outputs.backend_bucket }}" \
             -backend-config="key=terraform.tfstate" \
             -upgrade \
-            -reconfigure \
-            -var-file="../configuration/terraform.tfvars"
+            -reconfigure
 
       - name: Validate Terraform
         run: terraform validate
@@ -72,6 +71,7 @@ jobs:
           terraform plan \
             -detailed-exitcode \
             -out=${{ env.TF_PLAN_FILE }} \
+            -var-file="../configuration/terraform.tfvars" \
             ${{ inputs.destroy == true && '-destroy' || '' }}
 
           EXITCODE=$?
