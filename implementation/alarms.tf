@@ -6,8 +6,8 @@ resource "aws_cloudwatch_metric_alarm" "ecs_running_task_count" {
   alarm_name          = "${var.project_name}-ecs-running-tasks-low"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = "2"
-  metric_name         = "HealthyHostCount"
-  namespace           = "AWS/ApplicationELB"
+  metric_name         = "RunningTaskCount"
+  namespace           = "ECS/ContainerInsights"
   period              = "60"
   statistic           = "Average"
   threshold           = var.ecs_desired_count
