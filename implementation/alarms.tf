@@ -59,3 +59,42 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
     DBInstanceIdentifier = aws_db_instance.this.id
   }
 }
+
+resource "aws_cloudwatch_event_rule" "this" {
+  name        = "${var.project_name}-ecs-scaling-events"
+  description = "Capture ECS auto scaling events"
+
+  event_pattern = jsonencode({
+    source        = ["aws.application-autoscaling"]
+    "detail-type" = ["Application Auto Scaling Scaling Activity"]
+    detail = {
+      resourceId = [aws_appautoscaling_target.this.resource_id]
+    }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "this" {
+  rule      = aws_cloudwatch_event_rule.ecs_scaling_events.name
+  target_id = "SendToSNS"
+  arn       = aws_sns_topic.this.arn
+}
+
+resource "aws_sns_topic_policy" "this" {
+  arn = aws_sns_topic.this.arn
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Id      = "default"
+    Statement = [
+      {
+        Sid    = "AllowCloudWatchEvents"
+        Effect = "Allow"
+        Principal = {
+          Service = "events.amazonaws.com"
+        }
+        Action   = "SNS:Publish"
+        Resource = aws_sns_topic.this.arn
+      }
+    ]
+  })
+}
