@@ -37,7 +37,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_free_storage_low" {
   treat_missing_data  = "breaching"
 
   dimensions = {
-    DBInstanceIdentifier = aws_db_instance.this.id
+    DBInstanceIdentifier = aws_db_instance.this.identifier
   }
 }
 
@@ -56,7 +56,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    DBInstanceIdentifier = aws_db_instance.this.id
+    DBInstanceIdentifier = aws_db_instance.this.identifier
   }
 }
 
