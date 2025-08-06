@@ -55,7 +55,7 @@ resource "aws_ecs_task_definition" "this" {
       ]
 
       healthCheck = {
-        command     = ["CMD-SHELL", "wget --no-verbose --tries=1 http://localhost:${var.app_port}/healthcheck || exit 1"]
+        command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${var.app_port}/healthcheck || exit 1"]
         interval    = 30
         timeout     = 5
         retries     = 3
