@@ -1,5 +1,11 @@
 ---
 name: Terraform Plan Validation
+run-name: |
+  ${{
+    github.event_name == 'pull_request' && format('[PR Check] {0}', github.event.pull_request.title) ||
+    github.event_name == 'push' && format('[Check] {0}', github.event.head_commit.message) ||
+    '[Manual Check] Workflow Dispatch'
+  }}
 
 permissions:
   id-token: write
