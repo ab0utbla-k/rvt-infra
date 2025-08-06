@@ -201,12 +201,3 @@ variable "ecr_enable_force_delete" {
     Defaults to false.
   EOT
 }
-
-variable "alert_email" {
-  type        = string
-  default     = "igorblood906@gmail.com"
-  description = <<-EOT
-    (Optional) Email address to receive alarm notifications.
-    Leave empty to disable email notifications.
-  EOT
-}
