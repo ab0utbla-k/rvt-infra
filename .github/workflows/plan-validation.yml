@@ -5,6 +5,10 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: terraform-state-lock
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:
