@@ -74,7 +74,7 @@ resource "aws_cloudwatch_event_rule" "this" {
 }
 
 resource "aws_cloudwatch_event_target" "this" {
-  rule      = aws_cloudwatch_event_rule.ecs_scaling_events.name
+  rule      = aws_cloudwatch_event_rule.this.name
   target_id = "SendToSNS"
   arn       = aws_sns_topic.this.arn
 }
