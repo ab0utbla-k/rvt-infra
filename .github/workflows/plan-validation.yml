@@ -1,5 +1,6 @@
 ---
 name: Terraform Plan Validation
+run-name: '[Check] ${{ github.event.head_commit.message }}'
 
 permissions:
   id-token: write
