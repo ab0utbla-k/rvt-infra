@@ -56,7 +56,8 @@ resource "aws_ecs_task_definition" "this" {
 
       environment = [
         {
-          HEALTH_PORT = "80"
+          name  = "HEALTH_PORT"
+          value = "80"
         }
       ]
 
