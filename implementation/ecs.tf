@@ -49,7 +49,7 @@ resource "aws_ecs_task_definition" "this" {
 
       portMappings = [
         {
-          containerPort = 80
+          containerPort = var.app_port
           protocol      = "tcp"
         }
       ]
