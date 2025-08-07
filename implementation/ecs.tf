@@ -55,6 +55,8 @@ resource "aws_ecs_task_definition" "this" {
         }
       ]
 
+      command = ["sleep", "infinity"]
+
       healthCheck = {
         command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider https://google.com || exit 1"]
         interval    = 30
