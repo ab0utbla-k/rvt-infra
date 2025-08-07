@@ -14,7 +14,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs_running_task_count" {
   alarm_description   = "Triggers when the number of running ECS tasks falls below the desired count for 2 minutes"
   alarm_actions       = [aws_sns_topic.this.arn]
 
-  treat_missing_data  = "breaching"
+  treat_missing_data = "breaching"
 
   dimensions = {
     ServiceName = aws_ecs_service.this.name
@@ -34,7 +34,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_free_storage_low" {
   alarm_description   = "Triggers when RDS free storage drops below 10 GB for 10 minutes"
   alarm_actions       = [aws_sns_topic.this.arn]
 
-  treat_missing_data  = "breaching"
+  treat_missing_data = "breaching"
 
   dimensions = {
     DBInstanceIdentifier = aws_db_instance.this.identifier
@@ -53,7 +53,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
   alarm_description   = "Triggers when RDS CPU usage is over 80% for 10 minutes"
   alarm_actions       = [aws_sns_topic.this.arn]
 
-  treat_missing_data  = "notBreaching"
+  treat_missing_data = "notBreaching"
 
   dimensions = {
     DBInstanceIdentifier = aws_db_instance.this.identifier

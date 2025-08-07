@@ -34,7 +34,7 @@ ephemeral "random_password" "db_password" {
 }
 
 resource "aws_secretsmanager_secret" "db_password" {
-  name = "rds/postgres/password"
+  name                    = "rds/postgres/password"
   recovery_window_in_days = var.secret_recovery_window_in_days
 }
 
@@ -49,7 +49,7 @@ ephemeral "aws_secretsmanager_secret_version" "db_password" {
 }
 
 resource "aws_secretsmanager_secret" "db_dsn" {
-  name = "rds/postgres/dsn"
+  name                    = "rds/postgres/dsn"
   recovery_window_in_days = var.secret_recovery_window_in_days
 }
 
