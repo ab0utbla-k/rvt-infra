@@ -45,17 +45,23 @@ resource "aws_ecs_task_definition" "this" {
   container_definitions = jsonencode([
     {
       name  = var.project_name
-      image = "nginx:latest" // Just a dummy thing to bootstrap
+      image = "traefik/whoami:latest" // Just a dummy thing to bootstrap
 
       portMappings = [
         {
-          containerPort = var.app_port
+          containerPort = 80
           protocol      = "tcp"
         }
       ]
 
+      environment = [
+        {
+          HEALTH_PORT = "80"
+        }
+      ]
+
       healthCheck = {
-        command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${var.app_port}/healthcheck || exit 1"]
+        command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:$HEALTH_PORT/health || exit 1"]
         interval    = 30
         timeout     = 5
         retries     = 3
